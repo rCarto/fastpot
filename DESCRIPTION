@@ -1,0 +1,25 @@
+Package: fastpot
+Type: Package
+Title: Compute Fast Potential
+Version: 0.1.0
+Authors@R: c(
+      person("Timothée", "Giraud", 
+        email = "timothee.giraud@cnrs.fr", role = c("cre","aut"), 
+        comment = c(ORCID = "0000-0002-1932-3323")))
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+Imports:
+    sf
+Suggests:
+    lwgeom,
+    parallel,
+    doParallel, 
+    foreach,
+    cartography,
+    SpatialPosition,
+    knitr, 
+    rmarkdown
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.0
