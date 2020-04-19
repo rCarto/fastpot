@@ -47,27 +47,20 @@
 #' choroLayer(pot2, var = "OUTPUT", border = NA)
 #' choroLayer(grid, var = "pot", border = NA)
 #' }
-
-
-
 fp_fastpot <- function(knownpts, unknownpts, var = "v", fun = "e",
                        span = 2000, beta = 2,
                        limit = 10000, ncl = 3, size = 500){
 
-  # Check libraries
-  if (!requireNamespace("parallel", quietly = TRUE)) {
-    stop("'parallel' package needed for this function to work. Please install it.",
-         call. = FALSE)
-  }
-  if (!requireNamespace("foreach", quietly = TRUE)) {
-    stop("'foreach' package needed for this function to work. Please install it.",
-         call. = FALSE)
-  }
-  if (!requireNamespace("doParallel", quietly = TRUE)) {
-    stop("'doParallel' package needed for this function to work. Please install it.",
-         call. = FALSE)
-  }
 
+  #   # knownpts = pt
+  #   # unknownpts = grid
+  #   # var = "v"
+  #   # fun = "e"
+  #   # span = 2000
+  #   #
+  #   # beta = 2
+  #   # limit = 5000
+  #   # size = 250
   # launch multiple cores
   if (missing(ncl)){
     ncl <- parallel::detectCores(all.tests = FALSE, logical = FALSE) - 1
@@ -86,9 +79,6 @@ fp_fastpot <- function(knownpts, unknownpts, var = "v", fun = "e",
     ml[[i]] <- unknownpts[(sequence[i]):(sequence[i+1]-1),]
   }
 
-
-
-
   pot <- foreach::`%dopar%`(foreach::foreach(unknownpts = ml,
                                              .packages = c('sf'),
                                              .combine = c, .inorder = FALSE),
@@ -102,8 +92,6 @@ fp_fastpot <- function(knownpts, unknownpts, var = "v", fun = "e",
                               eucledian_simple <- function(from, to){
                                 sqrt( (from[1] - to[1])^2 + (from[ 2] - to[ 2])^2 )
                               }
-
-
                               if(fun =="e"){
                                 alpha  <- log(2) / span ^ beta
                                 fric <- function(alpha,matdist,beta){exp(- alpha * matdist ^ beta)}
@@ -129,13 +117,6 @@ fp_fastpot <- function(knownpts, unknownpts, var = "v", fun = "e",
   parallel::stopCluster(cl)
   return(pot)
 }
-
-
-
-
-
-
-
 
 
 
