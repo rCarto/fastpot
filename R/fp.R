@@ -106,7 +106,7 @@ fp_fastpot <- function(knownpts, unknownpts, var = "v", fun = "e",
                               l <- vector("list", nrow(ugeom))
 
                               for (i in seq_along(l)){
-                                kn <- kgeom[unlist(x[i]),]
+                                kn <- kgeom[unlist(x[i]),,drop=FALSE]
                                 un <- ugeom[i,]
                                 matdist <- apply(kn, 1, eucledian_simple, un)
                                 un <- sum(v[unlist(x[i])] * fric(alpha, matdist, beta), na.rm = TRUE)
@@ -117,9 +117,3 @@ fp_fastpot <- function(knownpts, unknownpts, var = "v", fun = "e",
   parallel::stopCluster(cl)
   return(pot)
 }
-
-
-
-
-
-
