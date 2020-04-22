@@ -47,7 +47,8 @@ dispatches the computation in \code{ncl} cores, \code{size} indicates the
 size of each chunks.}
 }
 \value{
-A vector, or a matrix is returned.
+If only one variable is computed a vector is returned, if more than
+one variable is computed a matrix is returned.
 }
 \description{
 stewart with cuttoff (limit) and parrallel.

@@ -20,7 +20,8 @@
 #' @param size \code{fp_fastpot} splits \code{y} in smaller chunks and
 #' dispatches the computation in \code{ncl} cores, \code{size} indicates the
 #' size of each chunks.
-#' @return A vector, or a matrix is returned.
+#' @return If only one variable is computed a vector is returned, if more than
+#' one variable is computed a matrix is returned.
 #' @export
 #' @importFrom sf st_buffer st_centroid st_geometry st_intersects
 #' @examples
@@ -71,7 +72,11 @@ fp_fastpot <- function(x, y, var = "v", fun = "e",
   # data simplification
   xsfc <- st_geometry(x)
   kgeom <- matrix(unlist(xsfc), ncol = 2, byrow = TRUE)
-  v <- x[[var]]
+
+
+
+  v <- as.matrix(x= x[,var,drop = TRUE])
+  print(dim(v))
   ysfc <- st_centroid(st_geometry(y))
 
   # sequence to split unknowpts
@@ -123,7 +128,8 @@ fp_fastpot <- function(x, y, var = "v", fun = "e",
         kn <- kgeom[kindex,,drop=FALSE]
         un <- ugeom[i,]
         matdist <- apply(kn, 1, eucledian_simple, un)
-        un <- sum(v[kindex] * fric(alpha, matdist, beta), na.rm = TRUE)
+        un <- apply(X = v[kindex, , drop = FALSE], MARGIN = 2,
+                    FUN = function(x){sum(x * fric(alpha, matdist, beta), na.rm = TRUE)})
         l[[i]] <- un
       }
       unlist(l)
@@ -131,5 +137,12 @@ fp_fastpot <- function(x, y, var = "v", fun = "e",
   )
   # stop parralel
   parallel::stopCluster(cl)
+  print("kkk")
+  if(length(var)==1){
+    pot <- as.numeric(pot)
+  }else{
+    pot <- matrix(pot, ncol = length(var), byrow = T, dimnames = list(NULL, var))
+  }
   return(pot)
 }
+
