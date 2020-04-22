@@ -1,16 +1,26 @@
-#' Fast Potential Calulation
-#'
-#' @description stewart with cuttoff (limit) and parrallel
-#' @param knownpts sf point, known pts
-#' @param unknownpts sf point, known points
-#' @param var variable name
-#' @param fun friction function, "e" (expon) or "p" (pareto)
-#' @param span span
-#' @param beta beta
-#' @param limit limit
-#' @param ncl number of core
-#' @param size size chunk
-#' @return a vector
+#' @title Fast Potential Calulation
+#' @description stewart with cuttoff (limit) and parrallel.
+#' @param x set of observations to compute the potentials from, sf points.
+#' @param y set of points for which the potentials are computed.
+#' @param var names of the variables in \code{x} from which potentials are computed.
+#' Quantitative variable with no negative values.
+#' @param fun spatial interaction function. Options are "p"
+#' (pareto, power law) or "e" (exponential).
+#' For pareto the interaction is defined as: (1 + alpha * mDistance) ^ (-beta).
+#' For "exponential" the interaction is defined as:
+#' exp(- alpha * mDistance ^ beta).
+#' The alpha parameter is computed from parameters given by the user
+#' (\code{beta} and \code{span}).
+#' @param span distance where the density of probability of the spatial
+#' interaction function equals 0.5.
+#' @param beta impedance factor for the spatial interaction function.
+#' @param limit maximum distance used to retrieved \code{x} points, in map units.
+#' @param ncl number of clusters. \code{ncl} is set to
+#' \code{parallel::detectCores() - 1} by default.
+#' @param size \code{fp_fastpot} splits \code{y} in smaller chunks and
+#' dispatches the computation in \code{ncl} cores, \code{size} indicates the
+#' size of each chunks.
+#' @return A vector, or a matrix is returned.
 #' @export
 #' @importFrom sf st_buffer st_centroid st_geometry st_intersects
 #' @examples
@@ -47,20 +57,10 @@
 #' choroLayer(pot2, var = "OUTPUT", border = NA)
 #' choroLayer(grid, var = "pot", border = NA)
 #' }
-fp_fastpot <- function(knownpts, unknownpts, var = "v", fun = "e",
+fp_fastpot <- function(x, y, var = "v", fun = "e",
                        span = 2000, beta = 2,
                        limit = 10000, ncl = 3, size = 500){
 
-
-  #   # knownpts = pt
-  #   # unknownpts = grid
-  #   # var = "v"
-  #   # fun = "e"
-  #   # span = 2000
-  #   #
-  #   # beta = 2
-  #   # limit = 5000
-  #   # size = 250
   # launch multiple cores
   if (missing(ncl)){
     ncl <- parallel::detectCores(all.tests = FALSE, logical = FALSE) - 1
@@ -68,52 +68,68 @@ fp_fastpot <- function(knownpts, unknownpts, var = "v", fun = "e",
   cl <- parallel::makeCluster(ncl)
   doParallel::registerDoParallel(cl)
 
+  # data simplification
+  xsfc <- st_geometry(x)
+  kgeom <- matrix(unlist(xsfc), ncol = 2, byrow = TRUE)
+  v <- x[[var]]
+  ysfc <- st_centroid(st_geometry(y))
 
   # sequence to split unknowpts
-  sequence <- unique(c(seq(1,nrow(unknownpts), size),nrow(unknownpts)+1))
-  lseq <- length(sequence)-1
+  ny <- nrow(y)
+  sequence <- unique(c(seq(1, ny, size), ny + 1))
+  lseq <- length(sequence) - 1
 
   # split unknownpts and put it on a list
   ml <- list()
   for  (i in 1:lseq){
-    ml[[i]] <- unknownpts[(sequence[i]):(sequence[i+1]-1),]
+    ml[[i]] <- ysfc[(sequence[i]):(sequence[i+1]-1)]
   }
 
-  pot <- foreach::`%dopar%`(foreach::foreach(unknownpts = ml,
-                                             .packages = c('sf'),
-                                             .combine = c, .inorder = FALSE),
-                            {
-                              gbuf <- st_buffer(st_centroid(st_geometry(unknownpts)), limit)
-                              x <- st_intersects(gbuf, knownpts, prepared = TRUE)
-                              kgeom <- st_geometry(knownpts)
-                              ugeom <- st_centroid(st_geometry(unknownpts))
-                              kgeom <- matrix(unlist(kgeom), ncol = 2, byrow = TRUE)
-                              ugeom <- matrix(unlist(ugeom), ncol = 2, byrow = TRUE)
-                              eucledian_simple <- function(from, to){
-                                sqrt( (from[1] - to[1])^2 + (from[ 2] - to[ 2])^2 )
-                              }
-                              if(fun =="e"){
-                                alpha  <- log(2) / span ^ beta
-                                fric <- function(alpha,matdist,beta){exp(- alpha * matdist ^ beta)}
-                              }
-                              if(fun == "p"){
-                                alpha  <- (2 ^ (1 / beta) - 1) / span
-                                fric <- function(alpha,matdist,beta){(1 + alpha * matdist) ^ (-beta)}
-                              }
+  # dispatch
+  pot <- foreach::`%dopar%`(
+    foreach::foreach(ysfc = ml,
+                     .packages = 'sf',
+                     .combine = c,
+                     .inorder = FALSE),
+    {
+      # FUNS
+      eucledian_simple <- function(from, to){
+        sqrt( (from[1] - to[1])^2 + (from[ 2] - to[ 2])^2 )
+      }
+      if(fun =="e"){
+        alpha  <- log(2) / span ^ beta
+        fric <- function(alpha,matdist,beta){
+          exp(- alpha * matdist ^ beta)
+        }
+      }
+      if(fun == "p"){
+        alpha  <- (2 ^ (1 / beta) - 1) / span
+        fric <- function(alpha,matdist,beta){
+          (1 + alpha * matdist) ^ (-beta)
+        }
+      }
 
-                              v <- knownpts[[var]]
+      # Buffer limit
+      gbuf <- st_buffer(ysfc, limit)
+      inter <- st_intersects(gbuf, xsfc, prepared = TRUE)
 
-                              l <- vector("list", nrow(ugeom))
+      # data transformation
+      ugeom <- matrix(unlist(ysfc), ncol = 2, byrow = TRUE)
 
-                              for (i in seq_along(l)){
-                                kn <- kgeom[unlist(x[i]),,drop=FALSE]
-                                un <- ugeom[i,]
-                                matdist <- apply(kn, 1, eucledian_simple, un)
-                                un <- sum(v[unlist(x[i])] * fric(alpha, matdist, beta), na.rm = TRUE)
-                                l[[i]] <- un
-                              }
-                              unlist(l)
-                            })
+      # go through each y
+      l <- vector("list", nrow(ugeom))
+      for (i in seq_along(l)){
+        kindex <- unlist(inter[i])
+        kn <- kgeom[kindex,,drop=FALSE]
+        un <- ugeom[i,]
+        matdist <- apply(kn, 1, eucledian_simple, un)
+        un <- sum(v[kindex] * fric(alpha, matdist, beta), na.rm = TRUE)
+        l[[i]] <- un
+      }
+      unlist(l)
+    }
+  )
+  # stop parralel
   parallel::stopCluster(cl)
   return(pot)
 }
