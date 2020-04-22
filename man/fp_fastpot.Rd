@@ -5,8 +5,8 @@
 \title{Fast Potential Calulation}
 \usage{
 fp_fastpot(
-  knownpts,
-  unknownpts,
+  x,
+  y,
   var = "v",
   fun = "e",
   span = 2000,
@@ -17,29 +17,40 @@ fp_fastpot(
 )
 }
 \arguments{
-\item{knownpts}{sf point, known pts}
+\item{x}{set of observations to compute the potentials from, sf points.}
 
-\item{unknownpts}{sf point, known points}
+\item{y}{set of points for which the potentials are computed.}
 
-\item{var}{variable name}
+\item{var}{names of the variables in \code{x} from which potentials are computed.
+Quantitative variable with no negative values.}
 
-\item{fun}{friction function, "e" (expon) or "p" (pareto)}
+\item{fun}{spatial interaction function. Options are "p"
+(pareto, power law) or "e" (exponential).
+For pareto the interaction is defined as: (1 + alpha * mDistance) ^ (-beta).
+For "exponential" the interaction is defined as:
+exp(- alpha * mDistance ^ beta).
+The alpha parameter is computed from parameters given by the user
+(\code{beta} and \code{span}).}
 
-\item{span}{span}
+\item{span}{distance where the density of probability of the spatial
+interaction function equals 0.5.}
 
-\item{beta}{beta}
+\item{beta}{impedance factor for the spatial interaction function.}
 
-\item{limit}{limit}
+\item{limit}{maximum distance used to retrieved \code{x} points, in map units.}
 
-\item{ncl}{number of core}
+\item{ncl}{number of clusters. \code{ncl} is set to
+\code{parallel::detectCores() - 1} by default.}
 
-\item{size}{size chunk}
+\item{size}{\code{fp_fastpot} splits \code{y} in smaller chunks and
+dispatches the computation in \code{ncl} cores, \code{size} indicates the
+size of each chunks.}
 }
 \value{
-a vector
+A vector, or a matrix is returned.
 }
 \description{
-stewart with cuttoff (limit) and parrallel
+stewart with cuttoff (limit) and parrallel.
 }
 \examples{
 \dontrun{
