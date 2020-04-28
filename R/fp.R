@@ -20,6 +20,7 @@
 #' @param size \code{fp_fastpot} splits \code{y} in smaller chunks and
 #' dispatches the computation in \code{ncl} cores, \code{size} indicates the
 #' size of each chunks.
+#' @param verbose if TRUE, output messages.
 #' @return If only one variable is computed a vector is returned, if more than
 #' one variable is computed a matrix is returned.
 #' @export
@@ -60,8 +61,8 @@
 #' }
 fp_fastpot <- function(x, y, var = "v", fun = "e",
                        span = 2000, beta = 2,
-                       limit = 10000, ncl = 3, size = 500){
-
+                       limit = 10000, ncl = 3, size = 500, verbose = FALSE){
+  t0 <- Sys.time()
   # launch multiple cores
   if (missing(ncl)){
     ncl <- parallel::detectCores(all.tests = FALSE, logical = FALSE) - 1
@@ -76,7 +77,6 @@ fp_fastpot <- function(x, y, var = "v", fun = "e",
 
 
   v <- as.matrix(x= x[,var,drop = TRUE])
-  print(dim(v))
   ysfc <- st_centroid(st_geometry(y))
 
   # sequence to split unknowpts
@@ -137,12 +137,14 @@ fp_fastpot <- function(x, y, var = "v", fun = "e",
   )
   # stop parralel
   parallel::stopCluster(cl)
-  print("kkk")
   if(length(var)==1){
     pot <- as.numeric(pot)
   }else{
     pot <- matrix(pot, ncol = length(var), byrow = T, dimnames = list(NULL, var))
   }
+  if(verbose){
+    tx <- Sys.time() - t0
+    cat("Computation time:", round(tx,2), attr(tx, "units"))
+  }
   return(pot)
 }
-

@@ -13,7 +13,8 @@ fp_fastpot(
   beta = 2,
   limit = 10000,
   ncl = 3,
-  size = 500
+  size = 500,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -45,6 +46,8 @@ interaction function equals 0.5.}
 \item{size}{\code{fp_fastpot} splits \code{y} in smaller chunks and
 dispatches the computation in \code{ncl} cores, \code{size} indicates the
 size of each chunks.}
+
+\item{verbose}{if TRUE, output messages.}
 }
 \value{
 If only one variable is computed a vector is returned, if more than
