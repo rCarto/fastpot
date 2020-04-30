@@ -18,9 +18,9 @@ fp_fastpot(
 )
 }
 \arguments{
-\item{x}{set of observations to compute the potentials from, sf points.}
+\item{x}{set of points to compute the potentials from, sf points.}
 
-\item{y}{set of points for which the potentials are computed.}
+\item{y}{set of points for which the potentials are computed, sf points.}
 
 \item{var}{names of the variables in \code{x} from which potentials are computed.
 Quantitative variable with no negative values.}

@@ -1,7 +1,7 @@
 #' @title Fast Potential Calulation
 #' @description stewart with cuttoff (limit) and parrallel.
-#' @param x set of observations to compute the potentials from, sf points.
-#' @param y set of points for which the potentials are computed.
+#' @param x set of points to compute the potentials from, sf points.
+#' @param y set of points for which the potentials are computed, sf points.
 #' @param var names of the variables in \code{x} from which potentials are computed.
 #' Quantitative variable with no negative values.
 #' @param fun spatial interaction function. Options are "p"
@@ -77,7 +77,7 @@ fp_fastpot <- function(x, y, var = "v", fun = "e",
 
 
   v <- as.matrix(x= x[,var,drop = TRUE])
-  ysfc <- st_centroid(st_geometry(y))
+  ysfc <- st_geometry(y)
 
   # sequence to split unknowpts
   ny <- nrow(y)
