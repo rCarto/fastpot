@@ -1,4 +1,4 @@
 # fastpot
 
 
-see https://github.com/riatelab/potential
+See https://github.com/riatelab/potential
